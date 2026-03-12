@@ -6,11 +6,30 @@ addDoc,
 serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import {
+getAuth,
+signInAnonymously
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 console.log("SCRIPT CARGADO");
+
+const auth = getAuth();
 
 const form = document.getElementById("alumnoForm");
 const log = document.getElementById("log");
 const boton = document.querySelector(".btn");
+
+/* AUTENTICACION ANONIMA */
+
+signInAnonymously(auth)
+.then(()=>{
+console.log("Usuario autenticado");
+})
+.catch((error)=>{
+console.error("Error de autenticación:",error);
+});
+
+/* MENSAJES */
 
 function mostrarMensaje(texto,tipo){
 
@@ -28,6 +47,8 @@ log.innerText = texto;
 
 }
 
+/* ENVIO FORMULARIO */
+
 form.addEventListener("submit", async (e) => {
 
 e.preventDefault();
@@ -41,7 +62,6 @@ const correo = document.getElementById("correo").value.trim();
 if(!nombre || !numero || !correo){
 
 mostrarMensaje("⚠️ Todos los campos son obligatorios.","error");
-
 return;
 
 }
@@ -60,20 +80,18 @@ fecha: serverTimestamp()
 
 try{
 
-await addDoc(collection(db,"messages"),datos);
-await addDoc(collection(db,"alumnos"),datos);
-await addDoc(collection(db,"alumno"),datos);
+/* GUARDAR EN FIRESTORE */
 
-/* MENSAJE DE EXITO */
+await addDoc(collection(db,"alumnos"),datos);
 
 mostrarMensaje(
-"✅ Guardado satisfactoriamente, te esperamos en agosto!!!!!",
+"✅ Guardado satisfactoriamente, te esperamos en agosto!!!",
 "success"
 );
 
 form.reset();
 
-/* ESPERA DE 10 SEGUNDOS */
+/* CONTADOR */
 
 let segundos=10;
 
@@ -96,9 +114,17 @@ boton.innerText="Guardar";
 
 }catch(error){
 
-console.error(error);
+console.error("ERROR FIREBASE:",error);
 
-mostrarMensaje("❌ Error al guardar. Intenta nuevamente.","error");
+if(error.code==="permission-denied"){
+
+mostrarMensaje("❌ Permiso denegado en Firestore. Revisa las reglas.","error");
+
+}else{
+
+mostrarMensaje("❌ Error al guardar en la base de datos.","error");
+
+}
 
 boton.disabled=false;
 boton.innerText="Guardar";
